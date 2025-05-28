@@ -8,16 +8,31 @@ authors = [ "minghu6 <a19678zy@163.com>" ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
 # cli
-clap = { version = "^3", features = ["derive"] }
-clap_complete = "3.1.1"
-shellexpand = "2.1"
+clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
 
 linuxc ={ path = "../linuxc" }
+osimodel = { path = "../osimodel" }
+m6ptr = { path = "../m6coll/m6ptr"}
+m6tobytes = { path = "../m6coll/m6tobytes"}
+
+
+# unify error (dyn)
+anyhow = "1"
+
+# gen code
+derive_more = { version = "1", features = ["display", "deref", "deref_mut"] }
 
 
 [[bin]]
 name="sip"
-path="bin/sip"
+path="bin/sip.rs"
 
+[[bin]]
+name="arp"
+path="bin/arp.rs"
+
+[[bin]]
+name="ping"
+path="bin/ping.rs"
