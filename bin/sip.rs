@@ -1,74 +1,68 @@
-// use std::path::PathBuf;
+use std::env;
 
-// use clap::{IntoApp, Parser};
-// use clap_complete::Shell;
+use clap::Parser;
+use linuxc::iface::get_available_ipv4_ifname;
+use log::info;
+use sip::dev::NetDevice;
+use anyhow::anyhow;
 
-// use bas::shell::gen_completions;
-// use bas::driver::RunCompiler;
+/// Simple UDP/IP Network Protocol Stack
+#[derive(Parser)]
+#[clap(name = "SIP")]
+struct Cli {
+    /// If name
+    #[arg(short)]
+    ifname: Option<String>,
+}
 
-// use inkwellkit::config::*;
+fn setup_logger() -> anyhow::Result<()> {
+    /* Logger should be configured first! */
+    let mut logconf = log4rs::config::load_config_file(
+        "log4rs.default.yaml",
+        Default::default(),
+    )?;
 
-// /// Bas Lang Compiler
-// #[derive(Parser)]
-// #[clap()]
-// struct Cli {
-//     /// Genrerate completion for bin
-//     #[clap(long = "generate", arg_enum)]
-//     generator: Option<Shell>,
+    if let Ok(levels) = env::var("RUST_LOG") {
+        match levels.parse() {
+            Ok(level) => {
+                logconf.root_mut().set_level(level);
+            }
+            Err(err) => Err(err)?,
+        }
+    }
 
-//     // #[clap(subcommand)]
-//     // command: Option<SubCommand>,
-
-//     #[clap(short = 'O', arg_enum)]
-//     opt: Option<OptLv>,
-
-//     #[clap(short = 't', long = "target_type", arg_enum)]
-//     target_type: Option<TargetType>,
-
-//     #[clap(short = 'e', long = "emit_type", arg_enum)]
-//     emit_type: Option<EmitType>,
-
-//     src: PathBuf,
-
-//     output: PathBuf
-// }
-
-// // #[derive(Subcommand)]
-// // enum SubCommand {
-// // }
-
-// // fn format_u32_str(s: &str) -> Result<u32, String> {
-// //     let s = s.replace("_", "");
-// //     u32::from_str_radix(&s, 10).or(Err(s))
-// // }
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // let cli = Cli::parse();
-
-    // if let Some(generator) = cli.generator {
-    //     let mut cmd = Cli::command();
-    //     gen_completions(generator, &mut cmd);
-    //     return Ok(());
-    // }
-
-    // let optlv = cli.opt.unwrap_or(OptLv::Debug);
-    // let target_type = cli.target_type.unwrap_or(TargetType::Bin);
-    // let emit_type = cli.emit_type.unwrap_or(EmitType::Obj);
-    // let print_type = if cli.output == PathBuf::from("stderr") {
-    //     PrintTy::StdErr
-    // }
-    // else {
-    //     PrintTy::File(cli.output)
-    // };
-
-    // let config = CompilerConfig {
-    //     optlv,
-    //     target_type,
-    //     emit_type,
-    //     print_type,
-    // };
-
-    // RunCompiler::new(&cli.src, config)?;
+    log4rs::init_config(logconf)?;
 
     Ok(())
+}
+
+
+fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+
+    let ifname = match cli.ifname {
+        Some(ifname) => ifname,
+        None => {
+            let mut ifname_list = get_available_ipv4_ifname()?;
+
+            if ifname_list.is_empty() {
+                Err(anyhow!("No available ifname"))?
+            }
+
+            ifname_list.remove(0)
+        },
+    };
+
+    setup_logger().unwrap();
+
+    let dev = NetDevice::init(ifname.as_str()).unwrap();
+
+    info!("dev init: {:#?}", dev);
+
+    loop {
+        match dev.input() {
+            Ok(_) => (),
+            Err(err) => println!("{err:#?}"),
+        }
+    }
 }

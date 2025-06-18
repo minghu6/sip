@@ -17,3 +17,7 @@ test-ping: build
 	@ # cargo run --bin ping -- 2.2.1.1  # test unreach dest
 	@ # cargo run --bin ping -- localhost
 	cargo run --bin ping -- baidu.com
+
+test-sip: build
+	sudo setcap cap_net_raw+eip ./target/debug/sip
+	RUST_LOG=trace cargo run --bin sip

@@ -13,16 +13,17 @@ use linuxc::{
     errno::{self},
     iface::{IfAddr, get_ifaddrtbl, get_ifindex, get_ifip},
     socket::{
-        AddressFamilies, ExtraBehavior, Flags, InAddr, PktType, SaFamily,
+        AddressFamily, ExtraBehavior, Flags, InAddr, PktType, SaFamily,
         SockAddr, SockAddrLL, SocketProtocol, SocketType, recv_all,
         sendto_all, socket,
     },
+    ether::{ EthTypeKind }
 };
 use m6ptr::OnceStatic;
 use osimodel::{
     datalink::{
-        Eth, EthProtoSpec, EthTypeSpec, Mac,
-        arp::{ARP, ARPOpSpec, HTypeSpec},
+        Eth, Mac,
+        arp::{ARP, ARPOpKind, HTypeKind},
     },
     network::IPv4Addr,
 };
@@ -67,9 +68,9 @@ fn send_arp(sock: BorrowedFd, dst_ip: IPv4Addr) -> errno::Result<usize> {
 
     let sockaddr = SockAddrLL {
         family: SaFamily::Packet.into(),
-        protocol: EthTypeSpec::ARP.into(),
+        protocol: EthTypeKind::ARP.into(),
         ifindex: *IFINDEX,
-        hatype: HTypeSpec::Ethernet10Mb.into(),
+        hatype: HTypeKind::Ethernet10Mb.into(),
         pkttype: PktType::Broadcast,
         halen: size_of::<Mac>() as u8,
         addr: src_mac.into(),
@@ -82,15 +83,15 @@ fn send_arp(sock: BorrowedFd, dst_ip: IPv4Addr) -> errno::Result<usize> {
     let eth = Eth {
         dst: Mac::BROADCAST,
         src: src_mac,
-        proto: EthProtoSpec::EthType(EthTypeSpec::ARP.into()).into(),
+        proto: EthTypeKind::ARP.into_proto(),
     };
 
     let arp = ARP {
-        htype: HTypeSpec::Ethernet10Mb.into(),
-        ptype: EthTypeSpec::IPv4.into(),
+        htype: HTypeKind::Ethernet10Mb.into(),
+        ptype: EthTypeKind::IPv4.into(),
         hlen: size_of::<Mac>() as u8,
         plen: size_of::<InAddr> as u8,
-        oper: ARPOpSpec::Request.into(),
+        op: ARPOpKind::Request.into(),
         sha: src_mac,
         spa: *SRC_IP,
         tha: Mac::ZERO,
@@ -113,7 +114,7 @@ fn send_arp(sock: BorrowedFd, dst_ip: IPv4Addr) -> errno::Result<usize> {
         sock,
         &buf[..cnt],
         Flags::default(),
-        SockAddr::Packet(sockaddr),
+        Some(SockAddr::Packet(sockaddr)),
     )
 }
 
@@ -195,10 +196,10 @@ fn main() -> Result<!, Box<dyn Error>> {
         let dst_ip = IPv4Addr::from(dst);
 
         let sock = socket(
-            AddressFamilies::PACKET,
+            AddressFamily::PACKET,
             SocketType::RAW,
             ExtraBehavior::default().non_block(),
-            SocketProtocol::Eth(EthTypeSpec::ARP),
+            SocketProtocol::Eth(EthTypeKind::ARP),
         )
         .map_err(|code| format!("socket error: {code}"))?;
 

@@ -1,0 +1,22 @@
+refresh_rate: 1 seconds
+appenders:
+  stdout:
+    kind: console
+  rolling-file:
+    kind: rolling_file
+    policy:
+      kind: compound
+      trigger:
+        kind: size
+        limit: 10mb
+      roller:
+        kind: fixed_window
+        pattern: logs/archive-sip/sip.{}.log
+        base: 1
+        count: 5
+    path: logs/sip.log
+root:
+  level: info
+  appenders:
+    - stdout
+    - rolling-file

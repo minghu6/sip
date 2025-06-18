@@ -19,16 +19,16 @@ use linuxc::{
     netdb::{AIFamilies, getaddrinfo},
     signal::{Signal, SignalSet, pthread_sigmask},
     socket::{
-        AddressFamilies, ExtraBehavior, SockAddr, SockAddrIn, SocketProtocol,
+        AddressFamily, ExtraBehavior, SockAddr, SockAddrIn, SocketProtocol,
         SocketType, recv_all, sendto_all, socket,
     },
 };
 use m6ptr::{OnceStatic, OwnedPtr, Ptr};
 use m6tobytes::{as_raw_slice, from_raw_slice};
 use osimodel::network::{
-    icmp::{ICMP, ICMPCode, ICMPTypeSpec},
+    icmp::{ICMP, ICMPCode, ICMPTypeKind},
     inet_cksum,
-    ip::{IPv4, ProtocolSpec},
+    ip::{IPv4, ProtocolKind},
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -410,7 +410,7 @@ fn icmp_pack<'a>(
     seq: u16,
     data: EchoData,
 ) -> Result<&'a [u8]> {
-    let ty = ICMPTypeSpec::EchoRequest.into();
+    let ty = ICMPTypeKind::EchoRequest.into();
     let code = ICMPCode::default();
     let cksum = Default::default();
     let gid = 0;
@@ -506,7 +506,7 @@ fn ping_once(
         sock,
         packed,
         Default::default(),
-        SockAddrIn::from(dst).into(),
+        Some(SockAddrIn::from(dst).into()),
     )
     .map_err(|err| anyhow!("sendto failed {err}"))?;
 
@@ -547,15 +547,15 @@ fn ping_recv(
         }
     }
 
-    let icmp = from_raw_slice::<ICMPPacket>(&buf[size_of::<IPv4>()..]);
+    let icmp = from_raw_slice::<ICMPPacket>(&buf[iphdr.ihl_v.ihl() as usize * 4..]);
     let icmphdr = icmp.hdr;
-    let icmptype: ICMPTypeSpec = icmphdr.ty.into();
+    let icmptype: ICMPTypeKind = icmphdr.ty.into();
 
     /* filter icmp type  */
 
     // filter loopback echo request
 
-    if iphdr.src.is_loopback() && icmptype == ICMPTypeSpec::EchoRequest {
+    if iphdr.src.is_loopback() && icmptype == ICMPTypeKind::EchoRequest {
         return Ok(());
     }
 
@@ -566,8 +566,8 @@ fn ping_recv(
         iphdr.src,
     );
 
-    if icmptype != ICMPTypeSpec::EchoReply {
-        use ICMPTypeSpec::*;
+    if icmptype != ICMPTypeKind::EchoReply {
+        use ICMPTypeKind::*;
 
         match icmptype {
             DestinationUnreachable
@@ -674,10 +674,10 @@ fn main() -> Result<()> {
     WND.init(cli.window).unwrap();
 
     let sock = socket(
-        AddressFamilies::INET,
+        AddressFamily::INET,
         SocketType::RAW,
         ExtraBehavior::default().non_block(),
-        SocketProtocol::IP(ProtocolSpec::ICMP),
+        SocketProtocol::IP(ProtocolKind::ICMP),
     )
     .map_err(|err| anyhow!("create raw sock failed for {err}"))?;
 
