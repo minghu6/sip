@@ -1,6 +1,6 @@
 [package]
 name = "sip"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = ""
 authors = [ "minghu6 <a19678zy@163.com>" ]

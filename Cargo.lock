@@ -586,7 +586,7 @@ checksum = "c19937216e9d3aa9956d9bb8dfc0b0c8beb6058fc4f7a4dc4d850edf86a237d6"
 
 [[package]]
 name = "linuxc"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "derive_more",
  "ifstructs",
@@ -800,7 +800,7 @@ dependencies = [
 
 [[package]]
 name = "osimodel"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "case_insensitive_string",
  "chrono",
@@ -1062,7 +1062,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "sip"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
