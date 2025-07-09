@@ -139,7 +139,7 @@ impl NetDevice {
             _ => (),
         }
 
-        ARP_TBL.get_mut().unwrap().insert(arph.spa.into(), arph.sha);
+        ARP_TBL.write().unwrap().insert(arph.spa.into(), arph.sha);
 
 
         Ok(())

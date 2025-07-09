@@ -171,7 +171,7 @@ impl NetDevice {
 
                 let iph = dataref.cast::<IPv4>().read_unaligned();
 
-                ARP_TBL.get_mut().unwrap().insert(iph.src.into(), ethh.src);
+                ARP_TBL.write().unwrap().insert(iph.src.into(), ethh.src);
 
                 trace!("Incomming Network IPv4 handled {:?}", iph.src);
 
